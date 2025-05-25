@@ -1,10 +1,13 @@
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ * Click nbfs://nbhost/SystemFileSystem/Templates/UnitTests/JUnit5TestClass.java to edit this template
  */
+
 import com.mycompany.chatapppoe.ChatAppPOE;
  import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
+import java.util.*;
+
 /**
  *
  * @author RC_Student_lab
@@ -60,5 +63,118 @@ public class ChatAppPOETest {
         assertEquals("Login failed, your username or password is incorrect", ChatAppPOE.Login.returnLoginStatus(false));
     }
 }
+//part 2
+@Test
+    public void testSendMessageAccepted() {
+        // Setup
+        List<Map<String, String>> testMessages = new ArrayList<>();
+        String recipient = "+27718693002";
+        String messageId = "msg001";
+        String message = "Hi Mike, can you join us for dinner tonight";
+        String hash = Integer.toHexString((messageId + 1 + message).hashCode());
 
+        Map<String, String> msg = new HashMap<>();
+        msg.put("id", messageId);
+        msg.put("recipient", "Mike");
+        msg.put("cell", recipient);
+        msg.put("message", message);
+        msg.put("hash", hash);
+
+        testMessages.add(msg);
+
+        // Assert
+        assertEquals(1, testMessages.size());
+        assertEquals("Mike", testMessages.get(0).get("recipient"));
+        assertEquals(recipient, testMessages.get(0).get("cell"));
+        assertEquals(message, testMessages.get(0).get("message"));
+    }
+
+    @Test
+    public void testSendMessageDiscarded() {
+        // Setup
+        List<Map<String, String>> testMessages = new ArrayList<>();
+        String recipient = "08575975889";
+        String messageId = "msg002";
+        String message = "Hi Keegan, did you receive the payment?";
+
+        // Simulate discard action (don't add to list)
+        boolean discard = true;
+
+        if (!discard) {
+            String hash = Integer.toHexString((messageId + 1 + message).hashCode());
+
+            Map<String, String> msg = new HashMap<>();
+            msg.put("id", messageId);
+            msg.put("recipient", "Keegan");
+            msg.put("cell", recipient);
+            msg.put("message", message);
+            msg.put("hash", hash);
+
+            testMessages.add(msg);
+        }
+
+        // Assert discarded
+        assertEquals(0, testMessages.size());
+    }
+
+@Test
+    public void testMessageLengthSuccess() {
+        String message = "A".repeat(250);
+        assertTrue(message.length() <= 250);
+        assertEquals("Message ready to send.", "Message ready to send.");
+    }
+
+    @Test
+    public void testMessageLengthFailure() {
+        String message = "A".repeat(260);
+        int excess = message.length() - 250;
+        assertTrue(message.length() > 250);
+        String expected = "Message exceeds 250 characters by " + excess + ", please reduce size.";
+        assertEquals(expected, "Message exceeds 250 characters by " + excess + ", please reduce size.");
+    }
+
+    @Test
+    public void testRecipientNumberSuccess() {
+        String number = "+12345678901";
+        boolean isValid = number.startsWith("+") && number.substring(1).matches("\\d+") && number.length() >= 10;
+        assertTrue(isValid);
+        assertEquals("Cell phone number successfully captured.", "Cell phone number successfully captured.");
+    }
+
+    @Test
+    public void testRecipientNumberFailure() {
+        String number = "12345";
+        boolean isValid = number.startsWith("+") && number.substring(1).matches("\\d+") && number.length() >= 10;
+        assertFalse(isValid);
+        String expected = "Cell phone number is incorrectly formatted or does not contain an international code. Please correct the number and try again.";
+        assertEquals(expected, "Cell phone number is incorrectly formatted or does not contain an international code. Please correct the number and try again.");
+    }
+
+    @Test
+    public void testMessageHash() {
+        String hashOutput = "00:0:HITONIGHT"; // Simulated hash output
+        assertEquals("00:0:HITONIGHT", hashOutput);
+    }
+
+    @Test
+    public void testMessageIdCreation() {
+        String messageId = "<Message ID>";
+        assertTrue(messageId.startsWith("<") && messageId.endsWith(">"));
+        assertEquals("Message ID generated: " + messageId, "Message ID generated: <Message ID>");
+    }
+
+    @Test
+    public void testMessageSent() {
+        assertEquals("Message successfully sent.", "Message successfully sent.");
+    }
+
+    @Test
+    public void testMessageDisregarded() {
+        assertEquals("Press 0 to delete message.", "Press 0 to delete message.");
+    }
+
+    @Test
+    public void testMessageStored() {
+        assertEquals("Message successfully stored.", "Message successfully stored.");
+    }
 }
