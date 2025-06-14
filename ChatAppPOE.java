@@ -3,6 +3,8 @@
  */
 
 package com.mycompany.chatapppoe;
+import com.mycompany.chatapppoe.ChatAppPOE.Message;
+import static com.mycompany.chatapppoe.ChatAppPOE.MessageStorage.loadMessagesFromJson;
 import java.util.Scanner;
 import java.util.Map;
 import java.util.HashMap;
@@ -10,6 +12,24 @@ import java.io.*;
 import java.util.List;
 import java.util.ArrayList;
 import javax.swing.JOptionPane;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import java.util.UUID;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import org.json.simple.parser.ParseException;
+
+
+
+
+
 
 /**
  *
@@ -18,8 +38,16 @@ import javax.swing.JOptionPane;
 
 public class ChatAppPOE {
     
+    static String currentUser = "";
+    static ArrayList<String> fullMessages = new ArrayList<>();
+    static ArrayList<String> messageHashes = new ArrayList<>();
+    static ArrayList<String> messageIDs = new ArrayList<>();
+
+
+
     static final String MESSAGE_FILE = "messages.json";
     static List<Map<String, String>> messages = new ArrayList<>();
+
 
     
     
@@ -52,7 +80,7 @@ public class ChatAppPOE {
             System.out.println(Login.returnLoginStatus(loginSuccess));
             //part 2
             if (loginSuccess) {
-                loadMessages();
+                loadMessagesFromJson();
                 boolean exit = false;
 List<Map<String, String>> messages = new ArrayList<>();
 List<Map<String, String>> storedMessages = new ArrayList<>();
@@ -64,11 +92,13 @@ while (running) {
     System.out.println("1. Send Message");
     System.out.println("2. Show Recent Message");
     System.out.println("3. Quit");
+    System.out.println("4. Manage Messages");
     System.out.print("Choose an option: ");
+    
 //let user choose an option 
     int choice = text.nextInt();
     text.nextLine(); 
-
+    
     switch (choice) {
         
         case 1:
@@ -140,10 +170,12 @@ String recipient = text.nextLine();
                 msg.put("cell", cell);
                 msg.put("message", messageText);
                 msg.put("hash", hash);
+                msg.put("sender", "You");
+
                 messages.add(msg);
 
                 // Save all messages so far to file
-                MessageStorage.saveMessagesToText(messages);
+                MessageStorage.saveMessagesToJson(messages);
 
                 System.out.println("Message succesfully sent"); 
                 break;
@@ -155,6 +187,8 @@ String recipient = text.nextLine();
                 msg.put("cell", cell);
                 msg.put("message", messageText);
                 msg.put("hash", hash);
+                msg.put("sender", "You");
+
                 storedMessages.add(msg);
                 System.out.println("Message stored to send later.");
                 break;
@@ -165,6 +199,8 @@ String recipient = text.nextLine();
 
             } else {
                 System.out.println("Invalid option. Please type 'send', 'store', or 'disregard'.");
+                
+
             }
         }
     }
@@ -173,7 +209,39 @@ String recipient = text.nextLine();
     break;
 
 case 2:
-    System.out.println("Coming Soon! this feature is still in development");
+    System.out.println("\n--- Recent Messages ---");
+
+    if (messages.isEmpty() && storedMessages.isEmpty()) {
+        System.out.println("No messages have been sent or stored yet.");
+    } else {
+        if (!messages.isEmpty()) {
+            System.out.println("\nSent Messages:");
+            for (Map<String, String> msg : messages) {
+                System.out.println("To: " + msg.get("recipient"));
+                System.out.println("Cell: " + msg.get("cell"));
+                System.out.println("Message: " + msg.get("message"));
+                System.out.println("ID: " + msg.get("id"));
+                System.out.println("Hash: " + msg.get("hash"));
+                System.out.println("------------------------");
+                msg.put("sender", "You");
+
+            }
+        }
+
+        if (!storedMessages.isEmpty()) {
+            System.out.println("\nStored Messages:");
+            for (Map<String, String> msg : storedMessages) {
+                System.out.println("To: " + msg.get("recipient"));
+                System.out.println("Cell: " + msg.get("cell"));
+                System.out.println("Message: " + msg.get("message"));
+                System.out.println("ID: " + msg.get("id"));
+                System.out.println("Hash: " + msg.get("hash"));
+                System.out.println("------------------------");
+                msg.put("sender", "You");
+
+            }
+        }
+    }
     break;
 
 
@@ -185,9 +253,16 @@ case 3:
         default:
             System.out.println("Invalid option. Please try again.");
             break;        
+            
+            case 4:
+    manageMessages(text);
+    break;
+
     }
 }
             }}}
+
+   
 
 
         
@@ -210,98 +285,302 @@ case 3:
     public static String sendMessageOption(Scanner scanner) {
         System.out.print("Type 'send' to send, 'store' to store, or other to discard: ");
         return scanner.nextLine().trim().toLowerCase();
+        
+        
     }
 }
 
     
 public class MessageStorage {
-//store messsages 
-    public static void saveMessagesToText(List<Map<String, String>> messages) {
-        try (FileWriter file = new FileWriter("messages.txt")) {
-            for (Map<String, String> msg : messages) {
-                String json = "{"
-                        + "\"id\":\"" + msg.get("id") + "\", "
-                        + "\"recipient\":\"" + msg.get("recipient") + "\", "
-                        + "\"message\":\"" + msg.get("message") + "\", "
-                        + "\"hash\":\"" + msg.get("hash") + "\""
-                        + "}";
-                file.write(json + System.lineSeparator());
-            }
-            System.out.println("Messages saved to messages.txt");
-        } catch (IOException e) {
-            System.out.println("Error saving messages: " + e.getMessage());
-        }
-    }
 
-    public class saveMessagesToJson {
-//save users messages
     public static void saveMessagesToJson(List<Map<String, String>> messages) {
-        try (FileWriter file = new FileWriter("messages.json")) {
-            file.write("[\n");
-            for (int i = 0; i < messages.size(); i++) {
-                Map<String, String> msg = messages.get(i);
-                file.write("  {\n");
-                file.write("    \"id\": \"" + msg.get("id") + "\",\n");
-                file.write("    \"recipient\": \"" + msg.get("recipient") + "\",\n");
-                file.write("    \"cell\": \"" + msg.get("cell") + "\",\n");
-                file.write("    \"message\": \"" + msg.get("message") + "\",\n");
-                file.write("    \"hash\": \"" + msg.get("hash") + "\"\n");
-                file.write("  }" + (i < messages.size() - 1 ? "," : "") + "\n");
-            }
-            file.write("]");
-            System.out.println("Messages saved to messages.json");
-        } catch (IOException e) {
-            System.out.println("Error saving messages: " + e.getMessage());
-        }
-    }}}
+    try (FileWriter file = new FileWriter("messages.json")) {
+        file.write("[\n");
+        for (int i = 0; i < messages.size(); i++) {
+            Map<String, String> msg = messages.get(i);
+            file.write("  {\n");
+            file.write("    \"id\": \"" + msg.get("id") + "\",\n");
+            file.write("    \"recipient\": \"" + msg.get("recipient") + "\",\n");
+            file.write("    \"cell\": \"" + msg.get("cell") + "\",\n");
+            file.write("    \"message\": \"" + msg.get("message").replace("\"", "\\\"") + "\",\n");
+            file.write("    \"hash\": \"" + msg.get("hash") + "\"\n");
+            file.write("  }" + (i < messages.size() - 1 ? "," : "") + "\n");
+            msg.put("sender", "You");
 
-public static void saveMessages() {
-        //save users messages
-        try (FileWriter file = new FileWriter(MESSAGE_FILE)) {
-            file.write("[");
-            for (int i = 0; i < messages.size(); i++) {
-                Map<String, String> m = messages.get(i);
-                file.write("{\"id\":\"" + m.get("id") + "\",\"recipient\":\"" + m.get("recipient") + "\",\"message\":\"" + m.get("message") + "\",\"hash\":\"" + m.get("hash") + "\"}");
-                if (i < messages.size() - 1) file.write(",");
-            }
-            file.write("]");
-        } catch (IOException e) {
-            System.out.println("Error saving messages: " + e.getMessage());
         }
+        file.write("]");
+        System.out.println("Messages saved to messages.json");
+    } catch (IOException e) {
+        System.out.println("Error saving messages: " + e.getMessage());
     }
-//let user see thier messages 
-    public static void loadMessages() {
-        File file = new File(MESSAGE_FILE);
-        if (!file.exists()) return;
-        try (Scanner reader = new Scanner(file)) {
-            StringBuilder json = new StringBuilder();
-            while (reader.hasNextLine()) {
-                json.append(reader.nextLine());
+}
+
+    // Load messages from messages.json
+    public static List<Map<String, String>> loadMessagesFromJson() {
+        List<Map<String, String>> messages = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader("messages.json"))) {
+            StringBuilder jsonBuilder = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                jsonBuilder.append(line.trim());
             }
-            
-      
-            String content = json.toString();
-            content = content.replaceAll("\\[|\\a]", "");
-            if (!content.trim().isEmpty()) {
-                String[] items = content.split("},");
-                for (String item : items) {
-                    item = item.replaceAll("[{}]", "") + (item.endsWith("}") ? "" : "}");
-                    String[] fields = item.split(",");
+
+            String json = jsonBuilder.toString().trim();
+            if (json.startsWith("[") && json.endsWith("]")) {
+                json = json.substring(1, json.length() - 1);
+                String[] entries = json.split("\\},\\s*\\{");
+
+                for (String entry : entries) {
+                    entry = entry.trim();
+                    if (!entry.startsWith("{")) entry = "{" + entry;
+                    if (!entry.endsWith("}")) entry = entry + "}";
+
+                    entry = entry.replaceAll("[{}\"]", "");
+                    String[] fields = entry.split(",");
+
                     Map<String, String> msg = new HashMap<>();
                     for (String field : fields) {
-                        String[] kv = field.split(":");
-                        if (kv.length == 2) {
-                            msg.put(kv[0].replaceAll("\"", ""), kv[1].replaceAll("\"", ""));
+                        String[] keyValue = field.split(":", 2);
+                        if (keyValue.length == 2) {
+                            msg.put(keyValue[0].trim(), keyValue[1].trim());
                         }
                     }
                     messages.add(msg);
                 }
             }
+
         } catch (IOException e) {
-            System.out.println("Error loading messages: " + e.getMessage());
+            System.out.println("No saved messages found.");
+        }
+        return messages;
+    }
+}
+//part 3
+public static void manageMessages(Scanner text) {
+    boolean managing = true;
+    messages = loadMessagesFromJson(); // Load messages from JSON
+
+    while (managing) {
+        System.out.println("\n--- Manage Messages ---");
+        System.out.println("1. View Messages");
+        System.out.println("2. Edit Message");
+        System.out.println("3. Delete Message");
+        System.out.println("4. Search Messages");
+        System.out.println("0. Return to Main Menu");
+
+        System.out.print("Select an option: ");
+        String choice = text.nextLine();
+
+        switch (choice) {
+            case "1":
+                viewMessages(); //  Shows all messages
+                break;
+
+            case "2":
+                editMessage(messages, text); //  Edit selected message
+                break;
+
+            case "3":
+                deleteMessage(messages, text); //  Delete by index or hash
+                break;
+
+            case "4":
+                searchMessages(messages, text); //  ID, recipient, longest
+                break;
+
+            case "0":
+                managing = false;
+                System.out.println("Returning to main menu...");
+                break;
+
+            default:
+                System.out.println("Invalid option. Try again.");
         }
     }
-      
+}
+    
+
+
+public static void viewMessages() {
+    if (messages.isEmpty()) {
+        System.out.println("No messages to show.");
+    } else {
+        System.out.println("\n--- Sent Messages ---");
+        for (int i = 0; i < messages.size(); i++) {
+            Map<String, String> msg = messages.get(i);
+            System.out.println("Index: " + i);
+            System.out.println("To: " + msg.get("recipient"));
+            System.out.println("Cell: " + msg.getOrDefault("cell", "N/A"));  // cell might be missing
+            System.out.println("Message: " + msg.get("message"));
+            System.out.println("ID: " + msg.get("id"));
+            System.out.println("Hash: " + msg.get("hash"));
+            System.out.println("------------------------");
+            msg.put("sender", "You");
+
+            
+
+        }
+    }
+}
+
+public static void editMessage(List<Map<String, String>> messages, Scanner scanner) {
+    if (messages.isEmpty()) {
+        System.out.println("No messages to edit.");
+        return;
+    }
+
+    // Show all messages with index
+    System.out.println("Messages:");
+    for (int i = 0; i < messages.size(); i++) {
+        System.out.println(i + ": " + messages.get(i).get("message"));
+    }
+
+    // Ask user which message to edit
+    System.out.print("Enter the index of the message to edit: ");
+    int index = -1;
+
+    try {
+        index = Integer.parseInt(scanner.nextLine());
+    } catch (NumberFormatException e) {
+        System.out.println("Invalid input. Please enter a number.");
+        return;
+    }
+
+    if (index < 0 || index >= messages.size()) {
+        System.out.println("Invalid index.");
+        return;
+    }
+
+    Map<String, String> messageToEdit = messages.get(index);
+    System.out.println("Current message: " + messageToEdit.get("message"));
+    System.out.print("Enter the new message: ");
+    String newMessage = scanner.nextLine();
+
+    // Update message and hash
+    messageToEdit.put("message", newMessage);
+    messageToEdit.put("hash", Integer.toString(newMessage.hashCode()));
+
+    // Save updated list
+    MessageStorage.saveMessagesToJson(messages);
+    System.out.println("Message updated and saved successfully.");
+}
+
+
+public static void deleteMessage(List<Map<String, String>> messages, Scanner scanner) {
+    if (messages.isEmpty()) {
+        System.out.println("No messages to delete.");
+        return;
+    }
+
+    System.out.println("Messages:");
+    for (int i = 0; i < messages.size(); i++) {
+        System.out.println(i + ": " + messages.get(i).get("message"));
+    }
+
+    System.out.print("Enter the index of the message to delete (or type 'hash' to delete by hash): ");
+    String input = scanner.nextLine();
+
+    if (input.equalsIgnoreCase("hash")) {
+        System.out.print("Enter the hash of the message to delete: ");
+        String hash = scanner.nextLine();
+
+        boolean found = false;
+        Iterator<Map<String, String>> iterator = messages.iterator();
+        while (iterator.hasNext()) {
+            Map<String, String> msg = iterator.next();
+            if (msg.get("hash").equals(hash)) {
+                iterator.remove();
+                found = true;
+                break;
+            }
+        }
+
+        if (found) {
+            MessageStorage.saveMessagesToJson(messages);
+            System.out.println("Message deleted by hash.");
+        } else {
+            System.out.println("No message found with that hash.");
+        }
+
+    } else {
+        try {
+            int index = Integer.parseInt(input);
+            if (index >= 0 && index < messages.size()) {
+                messages.remove(index);
+                MessageStorage.saveMessagesToJson(messages);
+                System.out.println("Message deleted by index.");
+            } else {
+                System.out.println("Invalid index.");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input.");
+        }
+    }
+}
+
+
+public static void searchMessages(List<Map<String, String>> messages, Scanner scanner) {
+    if (messages.isEmpty()) {
+        System.out.println("No messages to search.");
+        return;
+    }
+
+    System.out.println("\nSearch Options:");
+    System.out.println("1. Search by Message ID");
+    System.out.println("2. Search by Recipient");
+    System.out.println("3. Show Longest Message");
+    System.out.print("Enter your choice: ");
+    String choice = scanner.nextLine();
+//user must pick an option
+    switch (choice) {
+        case "1":
+            //display messages by searching the ID of the recipient
+            System.out.print("Enter Message ID: ");
+            String id = scanner.nextLine();
+            for (Map<String, String> msg : messages) {
+                if (msg.get("id").equals(id)) {
+                    System.out.println("Recipient: " + msg.get("recipient"));
+                    System.out.println("Message: " + msg.get("message"));
+                    return;
+                }
+            }
+            System.out.println("No message found with ID: " + id);
+            break;
+
+        case "2":
+            //display messages by searching recipients name
+            System.out.print("Enter recipient name: ");
+            String recipient = scanner.nextLine();
+            boolean found = false;
+            for (Map<String, String> msg : messages) {
+                if (msg.get("recipient").equalsIgnoreCase(recipient)) {
+                    System.out.println("Message to " + recipient + ": " + msg.get("message"));
+                    found = true;
+                }
+            }
+            if (!found) {
+                System.out.println("No messages found for recipient: " + recipient);
+            }
+            break;
+
+        case "3":
+            //display the longest message
+            Map<String, String> longest = messages.get(0);
+            for (Map<String, String> msg : messages) {
+                if (msg.get("message").length() > longest.get("message").length()) {
+                    longest = msg;
+                }
+            }
+            System.out.println("Longest Message:");
+            System.out.println("To: " + longest.get("recipient"));
+            System.out.println("Message: " + longest.get("message"));
+            break;
+
+        default:
+            System.out.println("Invalid option.");
+    }
+}
+
 
     // Registering process
     // method to input username
