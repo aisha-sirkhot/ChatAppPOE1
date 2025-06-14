@@ -4,9 +4,20 @@
  */
 
 import com.mycompany.chatapppoe.ChatAppPOE;
+import com.mycompany.chatapppoe.ChatAppPOE.MessageStorage;
  import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import java.util.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  *
@@ -177,4 +188,53 @@ public class ChatAppPOETest {
     public void testMessageStored() {
         assertEquals("Message successfully stored.", "Message successfully stored.");
     }
+
+@Test
+public void testPopulateMessageArray() {
+    List<Map<String, String>> messages = new ArrayList<>();
+
+    Map<String, String> message = new HashMap<>();
+    message.put("id", "001");
+    message.put("recipient", "user123");
+    message.put("cell", "0123456789");
+    message.put("message", "Hello!");
+    message.put("hash", "abc123");
+
+    messages.add(message);
+
+    assertEquals(1, messages.size());
+    assertEquals("001", messages.get(0).get("id"));
+    assertEquals("user123", messages.get(0).get("recipient"));
+    assertEquals("0123456789", messages.get(0).get("cell"));
+    assertEquals("Hello!", messages.get(0).get("message"));
+    assertEquals("abc123", messages.get(0).get("hash"));
 }
+@Test
+public void testSaveMessagesToJson() {
+    List<Map<String, String>> messages = new ArrayList<>();
+
+    Map<String, String> message = new HashMap<>();
+    message.put("id", "001");
+    message.put("recipient", "user123");
+    message.put("cell", "0123456789");
+    message.put("message", "Hello JSON!");
+    message.put("hash", "hash001");
+
+    messages.add(message);
+
+    // Call method to save messages
+    MessageStorage.saveMessagesToJson(messages);
+
+    // Read file and check contents
+    try {
+        String content = new String(Files.readAllBytes(Paths.get("messages.json")));
+        assertTrue(content.contains("\"id\": \"001\""));
+        assertTrue(content.contains("\"recipient\": \"user123\""));
+        assertTrue(content.contains("\"cell\": \"0123456789\""));
+        assertTrue(content.contains("\"message\": \"Hello JSON!\""));
+        assertTrue(content.contains("\"hash\": \"hash001\""));
+    } catch (IOException e) {
+        fail("Could not read messages.json file");
+    }
+}}
+

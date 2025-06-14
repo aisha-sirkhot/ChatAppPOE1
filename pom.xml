@@ -24,6 +24,28 @@
             <version>5.6.0</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.github.fangjinuo.easyjson</groupId>
+            <artifactId>simplejson-to-easyjson</artifactId>
+            <version>3.2.26</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>com.github.evanbennett</groupId>
+            <artifactId>play-messages-java_2.10</artifactId>
+            <version>1.0.0-RC2</version>
+            <type>jar</type>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.github.evanbennett</groupId>
+                    <artifactId>play-messages-scala_2.10</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.scala-lang</groupId>
+                    <artifactId>scala-library</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
     </dependencies>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
