@@ -1,0 +1,23 @@
+[
+  {
+    "id": "A001",
+    "recipient": "Alice",
+    "cell": "0734567890",
+    "message": "Hello Alice, hope you're doing well!",
+    "hash": "123456789"
+  },
+  {
+    "id": "A002",
+    "recipient": "Bob",
+    "cell": "0741234567",
+    "message": "Meeting at 10AM tomorrow.",
+    "hash": "987654321"
+  },
+  {
+    "id": "A003",
+    "recipient": "Charlie",
+    "cell": "0612345678",
+    "message": "Happy Birthday, Charlie!",
+    "hash": "456789123"
+  }
+]
